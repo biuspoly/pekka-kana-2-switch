@@ -225,7 +225,9 @@ static void read_args(int argc, char *argv[]) {
 		}
 		else {
 			printf("Invalid arg\n");
+			#ifndef __SWITCH__
 			exit(1);
+			#endif
 		}
 	}
 }
@@ -349,9 +351,50 @@ static void log_data() {
 
 }
 
+#ifdef __SWITCH__
+#include <switch.h>
+/* Diagnostico: tudo o que o jogo escreve vai para sdmc:/switch/pk2/pk2_log.txt,
+ * e um crash grava o endereco no mesmo arquivo. */
+extern "C" {
+alignas(16) u8 __nx_exception_stack[0x1000];
+u64 __nx_exception_stack_size = sizeof(__nx_exception_stack);
+void __libnx_exception_handler(ThreadExceptionDump *ctx) {
+	FILE* f = fopen("sdmc:/switch/pk2/pk2_crash.txt", "w");
+	if (f) {
+		fprintf(f, "CRASH desc=0x%x pc=0x%lx lr=0x%lx sp=0x%lx far=0x%lx\n", ctx->error_desc,
+			(unsigned long)ctx->pc.x, (unsigned long)ctx->lr.x, (unsigned long)ctx->sp.x, (unsigned long)ctx->far.x);
+		extern char __start__;
+		fprintf(f, "base=0x%lx pc_off=0x%lx lr_off=0x%lx\n", (unsigned long)&__start__,
+			(unsigned long)(ctx->pc.x - (u64)&__start__), (unsigned long)(ctx->lr.x - (u64)&__start__));
+		fclose(f);
+	}
+	svcExitProcess();
+}
+}
+#endif
+
 int main(int argc, char *argv[]) {
 
+	#ifdef __SWITCH__
+	mkdir("sdmc:/switch/pk2", 0777);
+	freopen("sdmc:/switch/pk2/pk2_log.txt", "w", stdout);
+	setvbuf(stdout, NULL, _IONBF, 0);
+	printf("argc=%d argv0=%s\n", argc, argc > 0 ? argv[0] : "-");
+	#endif
+
 	read_args(argc, argv);
+
+	#ifdef __SWITCH__
+	if (!path_set && argc > 0 && argv[0]) {
+		std::string dir = argv[0];
+		size_t cut = dir.find_last_of('/');
+		if (cut != std::string::npos) {
+			dir = dir.substr(0, cut) + "/res";
+			if (chdir(dir.c_str()) == 0) path_set = true;
+		}
+	}
+	printf("cwd set=%d\n", (int)path_set);
+	#endif
 	
 	PLog::Init(PLog::ALL, PFile::Path(""));
 	
