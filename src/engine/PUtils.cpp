@@ -2,6 +2,10 @@
 //Pekka Kana 2
 //Copyright (c) 2003 Janne Kivilahti
 //#########################
+#ifdef __SWITCH__
+#include <switch.h>
+#include <cstring>
+#endif
 #include "engine/PUtils.hpp"
 
 #include "engine/PLog.hpp"
@@ -172,11 +176,24 @@ int RenameDir(std::string old_path, std::string new_path) {
 
 void GetLanguage(char* lang) {
 
-	#if (SDL_COMPILEDVERSION < 2014)
+	#if defined(__SWITCH__)
+		/* No Switch o SDL nao informa o idioma (devolve NULL); pergunta ao sistema. */
+		static char sw_locale[9] = "en";
+		u64 code = 0;
+		if (R_SUCCEEDED(setInitialize())) {
+			if (R_SUCCEEDED(setGetSystemLanguage(&code)) && code != 0) {
+				memcpy(sw_locale, &code, 8);
+				sw_locale[8] = '\0';
+			}
+			setExit();
+		}
+		const char* locale = sw_locale;
+	#elif (SDL_COMPILEDVERSION < 2014)
 		#warning SDL version must be at least 2.0.14 to support locale
 		const char* locale = "en";
 	#else
-		const char* locale = SDL_GetPreferredLocales()->language;
+		SDL_Locale* locales = SDL_GetPreferredLocales();
+		const char* locale = (locales && locales->language) ? locales->language : "en";
 	#endif
 
 	lang[0] = SDL_tolower(locale[0]);

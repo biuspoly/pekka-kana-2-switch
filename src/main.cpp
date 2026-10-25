@@ -358,14 +358,16 @@ static void log_data() {
 extern "C" {
 alignas(16) u8 __nx_exception_stack[0x1000];
 u64 __nx_exception_stack_size = sizeof(__nx_exception_stack);
+int main(int argc, char *argv[]);
 void __libnx_exception_handler(ThreadExceptionDump *ctx) {
 	FILE* f = fopen("sdmc:/switch/pk2/pk2_crash.txt", "w");
 	if (f) {
 		fprintf(f, "CRASH desc=0x%x pc=0x%lx lr=0x%lx sp=0x%lx far=0x%lx\n", ctx->error_desc,
 			(unsigned long)ctx->pc.x, (unsigned long)ctx->lr.x, (unsigned long)ctx->sp.x, (unsigned long)ctx->far.x);
-		extern char __start__;
-		fprintf(f, "base=0x%lx pc_off=0x%lx lr_off=0x%lx\n", (unsigned long)&__start__,
-			(unsigned long)(ctx->pc.x - (u64)&__start__), (unsigned long)(ctx->lr.x - (u64)&__start__));
+		MemoryInfo mi = {0}; u32 pi = 0;
+		svcQueryMemory(&mi, &pi, (u64)&main);
+		fprintf(f, "base=0x%lx pc_off=0x%lx lr_off=0x%lx\n", (unsigned long)mi.addr,
+			(unsigned long)(ctx->pc.x - mi.addr), (unsigned long)(ctx->lr.x - mi.addr));
 		fclose(f);
 	}
 	svcExitProcess();
