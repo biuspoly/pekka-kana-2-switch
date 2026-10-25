@@ -25,7 +25,10 @@ bool force_mobile = false;
 
 void Setcwd() {
 
-	#ifdef __ANDROID__
+	#ifdef __SWITCH__
+	chdir("sdmc:/switch/pk2/res");
+	return;
+	#elif defined(__ANDROID__)
 	return;
 	#else
 

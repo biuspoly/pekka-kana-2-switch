@@ -1,0 +1,87 @@
+# Pekka Kana 2 - Nintendo Switch homebrew build (devkitPro / libnx)
+#
+# Requisitos (no MSYS2 do devkitPro):
+#   pacman -S switch-dev switch-sdl2 switch-sdl2_image switch-sdl2_mixer
+#
+# Uso:
+#   make -f Makefile.switch          -> gera switch/pk2/pk2.nro
+#   make -f Makefile.switch sd       -> monta a pasta pronta para o cartao SD em switch/sd/
+#   make -f Makefile.switch clean
+
+ifeq ($(strip $(DEVKITPRO)),)
+$(error "DEVKITPRO nao definido. Abra o terminal 'MSYS2' do devkitPro ou exporte DEVKITPRO=/opt/devkitpro")
+endif
+
+PREFIX   := $(DEVKITPRO)/devkitA64/bin/aarch64-none-elf-
+CC       := $(PREFIX)gcc
+CXX      := $(PREFIX)g++
+PKGCONF  := $(DEVKITPRO)/portlibs/switch/bin/aarch64-none-elf-pkg-config
+ELF2NRO  := $(DEVKITPRO)/tools/bin/elf2nro
+NACPTOOL := $(DEVKITPRO)/tools/bin/nacptool
+
+APP_TITLE   := Pekka Kana 2
+APP_AUTHOR  := Janne Kivilahti / Piste Gamez (port: danilolc, Switch: comunidade)
+APP_VERSION := 1.4.5
+
+ARCH     := -march=armv8-a+crc+crypto -mtune=cortex-a57 -mtp=soft -fPIE
+DEFINES  := -D__SWITCH__ -DPK2_PORTABLE -DCOMMIT_HASH='"switch"'
+
+INCLUDES := -Isrc -Iexternal/lua/src -I$(DEVKITPRO)/libnx/include -I$(DEVKITPRO)/portlibs/switch/include
+SDL_CFLAGS := $(shell $(PKGCONF) sdl2 SDL2_image SDL2_mixer --cflags 2>/dev/null)
+SDL_LIBS   := $(shell $(PKGCONF) sdl2 SDL2_image SDL2_mixer --libs 2>/dev/null)
+
+CFLAGS   := -O2 -ffunction-sections $(ARCH) $(DEFINES) $(INCLUDES) $(SDL_CFLAGS)
+CXXFLAGS := $(CFLAGS) -std=gnu++17 -include climits -fno-rtti -Wno-unused-variable
+LDFLAGS  := -specs=$(DEVKITPRO)/libnx/switch.specs $(ARCH) -Wl,-Map,switch/build/pk2.map
+LIBS     := $(SDL_LIBS) -lnx -lm
+
+BUILD    := switch/build
+OUT      := switch/pk2
+
+# Fontes do jogo (sem os renderizadores de OpenGL desktop / software, que nao existem no Switch)
+PK2_SRC  := $(wildcard src/*.cpp src/*/*.cpp src/*/*/*.cpp)
+PK2_SRC  := $(filter-out src/engine/render/PGl.cpp src/engine/render/PGlFuncs.cpp src/engine/render/PSdlSoft.cpp,$(PK2_SRC))
+
+# Lua 5.4 (vendorizado em external/lua), sem o interpretador e o compilador standalone
+LUA_SRC  := $(filter-out external/lua/src/lua.c external/lua/src/luac.c external/lua/src/onelua.c external/lua/src/ltests.c,$(wildcard external/lua/src/*.c))
+
+OBJS     := $(addprefix $(BUILD)/,$(PK2_SRC:.cpp=.o) $(LUA_SRC:.c=.o))
+
+all: $(OUT)/pk2.nro
+
+$(BUILD)/%.o: %.cpp
+	@mkdir -p $(dir $@)
+	@echo "  CXX $<"
+	@$(CXX) $(CXXFLAGS) -MMD -c $< -o $@
+
+$(BUILD)/%.o: %.c
+	@mkdir -p $(dir $@)
+	@echo "  CC  $<"
+	@$(CC) $(CFLAGS) -MMD -c $< -o $@
+
+$(BUILD)/pk2.elf: $(OBJS)
+	@echo "  LD  $@"
+	@$(CXX) $(LDFLAGS) $^ $(LIBS) -o $@
+
+$(BUILD)/pk2.nacp:
+	@mkdir -p $(BUILD)
+	@$(NACPTOOL) --create "$(APP_TITLE)" "$(APP_AUTHOR)" "$(APP_VERSION)" $@
+
+$(OUT)/pk2.nro: $(BUILD)/pk2.elf $(BUILD)/pk2.nacp switch/icon.jpg
+	@mkdir -p $(OUT)
+	@$(ELF2NRO) $< $@ --icon=switch/icon.jpg --nacp=$(BUILD)/pk2.nacp
+	@echo "Pronto: $@"
+
+# Pasta pronta para copiar para a raiz do cartao SD
+sd: $(OUT)/pk2.nro
+	@rm -rf switch/sd && mkdir -p switch/sd/switch/pk2
+	@cp $(OUT)/pk2.nro switch/sd/switch/pk2/
+	@cp -r res switch/sd/switch/pk2/res
+	@echo "Copie o conteudo de switch/sd/ para a raiz do cartao SD."
+
+clean:
+	@rm -rf $(BUILD) $(OUT) switch/sd
+
+-include $(OBJS:.o=.d)
+
+.PHONY: all sd clean

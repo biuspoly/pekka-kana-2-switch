@@ -8,7 +8,7 @@
 #include "engine/PLog.hpp"
 #include "engine/types.hpp"
 
-#ifndef __ANDROID__
+#if !defined(__ANDROID__) && !defined(__SWITCH__)
 #include "engine/render/PGl.hpp"
 #include "engine/render/PSdlSoft.hpp"
 #endif
@@ -109,7 +109,7 @@ void adjust_screen() {
 
 void set_fullscreen(bool set) {
 
-	#ifdef __ANDROID__
+	#if defined(__ANDROID__) || defined(__SWITCH__)
 		SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
 		return;
 	#endif
@@ -204,7 +204,7 @@ int init(int width, int height, const char* name, const char* icon, int render_m
 	if (render_method == RENDERER_DEFAULT) {
 
 		// TODO choose renderer
-		#ifdef __ANDROID__
+		#if defined(__ANDROID__) || defined(__SWITCH__)
 
 		render_method = RENDERER_SDL;
 
@@ -226,7 +226,7 @@ int init(int width, int height, const char* name, const char* icon, int render_m
 
 	}
 
-    #ifdef __ANDROID__
+    #if defined(__ANDROID__) || defined(__SWITCH__)
 
     window_flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 
@@ -319,7 +319,7 @@ int init(int width, int height, const char* name, const char* icon, int render_m
 
 		case RENDERER_SDL:
 			renderer = new PSdl(width, height, window); break;
-    #ifndef __ANDROID__
+    #if !defined(__ANDROID__) && !defined(__SWITCH__)
 		case RENDERER_SDL_SOFTWARE:
 			renderer = new PSdlSoft(width, height, window); break;
 		case RENDERER_OPENGL:

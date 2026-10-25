@@ -17,7 +17,9 @@
 #define PK2_VERSION TO_VERSION(PK2_VER_MAJOR, PK2_VER_MINOR, PK2_VER_REVISION)
 #define PK2_VERSION_NAME "Definitive Edition"
 
-#ifdef __ANDROID__
+#ifdef __SWITCH__
+#define PK2_PLATFORM "(Switch)"
+#elif defined(__ANDROID__)
 #define PK2_PLATFORM "(Android)"
 #elif _WIN32
 #define PK2_PLATFORM "(Windows)"
