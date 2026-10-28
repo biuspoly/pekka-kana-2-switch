@@ -13,7 +13,8 @@ Switch a partir do código aberto do jogo.
 **Requisitos:** um Switch com custom firmware (por exemplo [Atmosphère](https://github.com/Atmosphere-NX/Atmosphere))
 e acesso ao menu de homebrew (hbmenu).
 
-1. Baixe [`dist/PekkaKana2_Switch_SD.zip`](dist/PekkaKana2_Switch_SD.zip).
+1. Baixe o [`PekkaKana2_Switch_SD.zip`](https://github.com/biuspoly/pekka-kana-2-switch/releases/latest/download/PekkaKana2_Switch_SD.zip)
+   da página de [Releases](https://github.com/biuspoly/pekka-kana-2-switch/releases).
 2. Extraia o conteúdo na **raiz do cartão SD**. A estrutura deve ficar assim:
    ```
    SD:/switch/pk2/pk2.nro
