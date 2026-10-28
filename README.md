@@ -11,7 +11,7 @@ Switch a partir do código aberto do jogo.
 ## Instalação no Switch
 
 **Requisitos:** um Switch com custom firmware (por exemplo [Atmosphère](https://github.com/Atmosphere-NX/Atmosphere))
-e acesso ao menu de homebrew (hbmenu).
+e acesso ao menu de homebrew (hbmenu). Testado num Switch com Atmosphère.
 
 1. Baixe o [`PekkaKana2_Switch_SD.zip`](https://github.com/biuspoly/pekka-kana-2-switch/releases/latest/download/PekkaKana2_Switch_SD.zip)
    da página de [Releases](https://github.com/biuspoly/pekka-kana-2-switch/releases).
